@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>dc.js - Series Example</title>
+    <meta charset="UTF-8">
+    
+        <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/dc.css">
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+</head>
+<body>
+
+<div id="test"></div>
+
+<script type="text/javascript" src="js/d3.js"></script>
+        <script type="text/javascript" src="js/crossfilter.js"></script>
+        <script type="text/javascript" src="js/dc.js"></script>
+        <script type="text/javascript"  src="js/jquery.min.js"></script>
+        
+
+<script type="text/javascript">
+
+var lineChart1 = dc.compositeChart("#test");
+   d3.csv("studenthall.csv", function(data) {
+
+
+
+       // parseDate = d3.time.format("%d-%m-%Y").parse
+
+        //var dtgFormat = d3.time.format("%b");
+
+        data.forEach(function(d) {
+
+            
+            d.date = d.StartDate.split('-')[1]
+            d.date1 = d.StartDate.split('-')[2]
+            d.patrons = d.Id
+        });
+
+        var facts = crossfilter(data);
+
+        monDimension = facts.dimension(function(d) {
+            return d.date;
+        })
+        numofPatrons = monDimension.group().reduceCount(function(d) {
+            return d.patrons;
+        });
+        
+        
+          yearDimension = facts.dimension(function(d) {
+            return d.date1;
+        })
+
+          numofPatrons1 = yearDimension.group().reduceCount(function(d) { if (d.date1 == "2013")
+            return d.patrons;
+        });
+
+          numofPatrons2 = yearDimension.group().reduceSum(function(d) { if (d.date1 == "2012")
+            return d.patrons;
+        });
+     
+          numofPatrons3 = yearDimension.group().reduceSum(function(d) { if (d.date1 == "2011")
+            return d.patrons;
+        });
+
+
+          group1 = monDimension.group().reduceCount(function(d) { return numofPatrons1;
+        });
+
+          group2 = monDimension.group().reduceCount(function(d) { return numofPatrons2;
+        });
+
+          group3 = monDimension.group().reduceCount(function(d) { return numofPatrons3;
+        });
+
+               lineChart1.width(1160)
+                   .height(250)
+                   .margins({ top: 10, right: 10, bottom: 20, left: 40 })
+                   .dimension(monDimension)
+                   .transitionDuration(500)
+                   .elasticY(true)
+                   .brushOn(false)
+                   .valueAccessor(function (d) {
+                       return d.value;
+                   })
+                   .title(function (d) {
+                       return "\nNumber of Povetry: " + d.key;
+
+                   })
+                   .x(d3.scale.linear().domain([0,12]))
+                   .compose([
+                       dc.lineChart(lineChart1).group(group1),
+                       dc.lineChart(lineChart1).group(group2),
+                       dc.lineChart(lineChart1).group(group3),
+                  
+                   ])
+               ;
+
+               dc.renderAll();
+/*
+d3.csv("studenthall.csv", function(error, data) {
+
+ data.forEach(function(d) {
+
+            
+            d.date = d.StartDate.split('-')[1]
+            d.date1 = d.StartDate.split('-')[2]
+            d.patrons = d.Id
+        });
+
+        var facts = crossfilter(data);
+
+
+
+  runDimension = facts.dimension(function(d) {return [+d.date1, +d.date]; });
+  runGroup = runDimension.group().reduceCount(function(d) { return +d.patrons; });
+
+  chart
+    .width(768)
+    .height(480)
+    .chart(function(c) { return dc.lineChart(c).interpolate('basis'); })
+    .x(d3.scale.ordinal().domain(["Jan", "Feb", "Mar" ,"Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"])) 
+            .xUnits(dc.units.ordinal)
+    .brushOn(false)
+    .yAxisLabel("Measured Speed km/s")
+    .xAxisLabel("Run")
+    .clipPadding(10)
+    .elasticY(true)
+    .dimension(runDimension)
+    .group(runGroup)
+    .mouseZoomable(true)
+    .seriesAccessor(function(d) {return "Year: " + d.key[0];})
+    .keyAccessor(function(d) {return +d.key[1];})
+    .valueAccessor(function(d) {return +d.value;})
+    .legend(dc.legend().x(350).y(350).itemHeight(13).gap(5).horizontal(1).legendWidth(140).itemWidth(70));
+  chart.yAxis().tickFormat(function(d) {return d3.format(',d')(d);});
+  chart.margins().left += 40;
+
+  dc.renderAll();
+
+});
+
+d3.csv("studenthall.csv", function(error, data) {
+	
+	  ndx = crossfilter(data);
+	  data.forEach(function(d) {
+
+          
+          d.date = "JanFebMarAprMayJunJulAugSepOctNovDec".indexOf(d.StartDate.split('-')[1]) / 3 + 1;
+          d.date1 = d.StartDate.split('-')[2];
+          d.month = d.StartDate.split('-')[1];
+          d.patrons = d.Id;
+      });
+	  runDimension = ndx.dimension(function(d) {return [d.date1, d.month]; });
+	  runGroup = runDimension.group().reduceCount(function(d) { return d.patrons; });
+
+	  chart
+	    .width(768)
+	    .height(480)
+	    .chart(function(c) { return dc.lineChart(c).interpolate('basis'); })
+	    .x(d3.scale.ordinal()) 
+            .xUnits(dc.units.ordinal)
+	    .brushOn(false)
+	    .yAxisLabel("Measured Speed km/s")
+	    .xAxisLabel("Run")
+	    .clipPadding(10)
+	    .elasticY(true)
+	    .dimension(runDimension)
+	    .group(runGroup)
+	    .mouseZoomable(true)
+	    .seriesAccessor(function(d) {return "Year: 20" + d.key[0];})
+	    .keyAccessor(function(d) {return d.key[1];})
+	    .valueAccessor(function(d) {return d.value ;})
+	    .legend(dc.legend().x(350).y(350).itemHeight(13).gap(5).horizontal(1).legendWidth(140).itemWidth(70));
+	  chart.yAxis().tickFormat(function(d) {return d3.format(',d')(d);});
+	  chart.margins().left += 40;
+
+	  dc.renderAll();
+*/
+	});
+
+</script>
+
+</body>
+</html>
